@@ -21,14 +21,34 @@ __device__ double device_sigmoid_prime (double z)
 }
 
 
+__device__ double atomicAdd(double* address, double val)
+{
+    unsigned long long int* address_as_ull =
+                                          (unsigned long long int*)address;
+    unsigned long long int old = *address_as_ull, assumed;
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_ull, assumed,
+                        __double_as_longlong(val +
+                        __longlong_as_double(assumed)));
+    } while (assumed != old);
+    return __longlong_as_double(old);
+}
+
+
 __global__ void backpropagation_kernel(device_network_t net,
 									const data_t data,
 									const uint32_array_t rand_index,
 									const uint32_t beginIndex,
 									const uint32_t endIndex) {
+
 	uint32_t block_id = blockIdx.x;
 	uint32_t thread_id = threadIdx.x;
 	uint32_t num_threads = blockDim.x;
+
+	if (block_id + beginIndex > endIndex) {
+		return; // nothing to do for this block
+	}
 
 	uint32_t image_id = rand_index.data[block_id + beginIndex];
 	uint8_t label = data.labels.labels[image_id];
@@ -44,6 +64,8 @@ __global__ void backpropagation_kernel(device_network_t net,
 	__shared__ uint32_t sm_output_delta_offset_positions[SM_ARR_SIZE];
 	__shared__ double sm_output_delta_data[SM_ARR_SIZE];
 	__shared__ double sm_inputs_data[SM_INPUT_SIZE];
+	__shared__ double sm_store1[SM_INPUT_SIZE];
+	__shared__ double sm_store2[SM_INPUT_SIZE];
 
 	device_vector_array_t sm_outputs;
 	sm_outputs.num_vectors = net.outputs.num_vectors;
@@ -69,6 +91,7 @@ __global__ void backpropagation_kernel(device_network_t net,
 	vector_t sm_inputs;
 	sm_inputs.size = net.inputs.size;
 	sm_inputs.data = sm_inputs_data;
+
 
 
 	if (thread_id < SM_ARR_SIZE) {
@@ -169,15 +192,15 @@ __global__ void backpropagation_kernel(device_network_t net,
 	// create expected output vector y from label
 	// double *expected_output_y = new double[sm_outputs.size_array[output_layer_index]];
 	for (uint32_t i = 0; i < sm_outputs.size_array[output_layer_index]; i++) {
-		net.store1.data[i] = 0.0;
+		sm_store1[i] = 0.0;
 	}
-	net.store1.data[label] = 1.0;
+	sm_store1[label] = 1.0;
 	// create cost_derivative vector
 	//double *cost_deriv = new double[sm_outputs.size_array[output_layer_index]];
-	//vector_subtract(&net->outputs.data[output_layer_index], &expected_output_y, &net.store2.data)
+	//vector_subtract(&net->outputs.data[output_layer_index], &expected_output_y, &sm_store2)
 	for (uint32_t i = 0; i < sm_outputs.size_array[output_layer_index]; i++) {
 		uint32_t pos = sm_outputs.offset_positions[output_layer_index] + i;
-		net.store2.data[i] = sm_outputs.data[pos]  - net.store1.data[i];
+		sm_store2[i] = sm_outputs.data[pos]  - sm_store1[i];
 	}
 	//vector_copy (&net->zs.data[output_layer_index], &net->output_delta.data[output_layer_index]); // vector_copy(src, dest)
 	if (thread_id < (sm_output_delta.size_array[output_layer_index]) ) {
@@ -192,10 +215,10 @@ __global__ void backpropagation_kernel(device_network_t net,
 	}
 	__syncthreads();
 
-	//vector_product(&net->output_delta.data[output_layer_index], &net.store2.data, &net->output_delta.data[output_layer_index]);
+	//vector_product(&net->output_delta.data[output_layer_index], &sm_store2, &net->output_delta.data[output_layer_index]);
 	if (thread_id < (sm_output_delta.size_array[output_layer_index]) ) {
 		uint32_t pos = sm_output_delta.offset_positions[output_layer_index] + thread_id;
-		sm_output_delta.data[pos] = sm_output_delta.data[pos] * net.store2.data[thread_id];
+		sm_output_delta.data[pos] = sm_output_delta.data[pos] * sm_store2[thread_id];
 	}
 	__syncthreads();
 
@@ -207,7 +230,8 @@ __global__ void backpropagation_kernel(device_network_t net,
 	// vector_add (&net->output_delta.data[layer], &net->nabla_b.data[layer], &net->nabla_b.data[layer]);
 	if (thread_id < (net.nabla_b.size_array[output_layer_index]) ) {
 		uint32_t pos = net.nabla_b.offset_positions[output_layer_index] + thread_id;
-		net.nabla_b.data[pos] += sm_output_delta.data[pos];
+		//net.nabla_b.data[pos] += sm_output_delta.data[pos];
+		atomicAdd(&net.nabla_b.data[pos], sm_output_delta.data[pos]);
 	}
 	__syncthreads();
 
@@ -220,7 +244,8 @@ __global__ void backpropagation_kernel(device_network_t net,
 		uint32_t matrix_pos = net.nabla_w.offset_positions[output_layer_index] + thread_id ;
 		uint32_t col_vector_pos = sm_output_delta.offset_positions[output_layer_index] + i_idx;
 		uint32_t row_vector_pos = sm_outputs.offset_positions[output_layer_index - 1] + j_idx; // IMP: layer-1!
-		net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos];
+		//net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos];
+		atomicAdd(&net.nabla_w.data[matrix_pos], sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos]);
 	}
 	__syncthreads();
 
@@ -252,7 +277,7 @@ __global__ void backpropagation_kernel(device_network_t net,
         if (thread_id < rows * cols) {
         	uint32_t i_idx = thread_id / cols;
         	uint32_t j_idx = thread_id % cols;
-        	net.store2.data[j_idx * rows + i_idx] = net.weights.data[net.weights.offset_positions[l+1] + thread_id];
+        	sm_store2[j_idx * rows + i_idx] = net.weights.data[net.weights.offset_positions[l+1] + thread_id];
         }
         __syncthreads();
 
@@ -261,11 +286,11 @@ __global__ void backpropagation_kernel(device_network_t net,
 		if (thread_id < cols) { // thread_id == row_index
 			double accumulator = 0.0;
 			for (uint32_t i = 0; i < rows; ++i) { // i == col_index
-				double m = net.store2.data[thread_id * rows + i];
+				double m = sm_store2[thread_id * rows + i];
 				double n = sm_output_delta.data[sm_output_delta.offset_positions[l+1] + i];
 				accumulator += m * n;
 			}
-			net.store1.data[thread_id] = accumulator;
+			sm_store1[thread_id] = accumulator;
 		}
 		__syncthreads();
 
@@ -274,7 +299,7 @@ __global__ void backpropagation_kernel(device_network_t net,
         //vector_product (&tmp_vector, &net->output_delta.data[l], &net->output_delta.data[l]);
 		if (thread_id < (sm_output_delta.size_array[l]) ) {
 			uint32_t pos = sm_output_delta.offset_positions[l] + thread_id;
-			sm_output_delta.data[pos] = sm_output_delta.data[pos] * net.store1.data[thread_id];
+			sm_output_delta.data[pos] = sm_output_delta.data[pos] * sm_store1[thread_id];
 		}
 		__syncthreads();
 
@@ -282,7 +307,8 @@ __global__ void backpropagation_kernel(device_network_t net,
 		// vector_add (&net->output_delta.data[layer], &net->nabla_b.data[layer], &net->nabla_b.data[layer]);
 		if (thread_id < (net.nabla_b.size_array[l]) ) {
 			uint32_t pos = net.nabla_b.offset_positions[l] + thread_id;
-			net.nabla_b.data[pos] += sm_output_delta.data[pos];
+			//net.nabla_b.data[pos] += sm_output_delta.data[pos];
+			atomicAdd(&net.nabla_b.data[pos], sm_output_delta.data[pos]);
 		}
 		__syncthreads();
 		if ( l >= 1) {
@@ -295,7 +321,8 @@ __global__ void backpropagation_kernel(device_network_t net,
 				uint32_t matrix_pos = net.nabla_w.offset_positions[l] + thread_id ;
 				uint32_t col_vector_pos = sm_output_delta.offset_positions[l] + i_idx;
 				uint32_t row_vector_pos = sm_outputs.offset_positions[l - 1] + j_idx; // IMP: layer-1!
-				net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos];
+				//net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos];
+				atomicAdd(&net.nabla_w.data[matrix_pos], sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos]);
 			}
 		} else {
 			//col_vector_multiply_row_vector_with_sum(&net->output_delta.data[layer], &net->inputs, &net->nabla_w.data[layer]);
@@ -313,7 +340,8 @@ __global__ void backpropagation_kernel(device_network_t net,
 					uint32_t j_idx = e_idx % cols;
 					uint32_t matrix_pos = net.nabla_w.offset_positions[l] + e_idx ;
 					uint32_t col_vector_pos = sm_output_delta.offset_positions[l] + i_idx;
-					net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_inputs.data[j_idx];
+					//net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_inputs.data[j_idx];
+					atomicAdd(&net.nabla_w.data[matrix_pos], sm_output_delta.data[col_vector_pos] * sm_inputs.data[j_idx]);
 				}
 				num_iter--;
 			}

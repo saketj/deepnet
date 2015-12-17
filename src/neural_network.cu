@@ -144,7 +144,6 @@ void network_update_mini_batch (network_t * const net_h,
                            const uint32_t endIndex)
 {
     assert(beginIndex <= endIndex);
-    assert(endIndex - beginIndex + 1 == net_h->mini_batch_size);
 
     // Reset batch averages
     vector_array_zero (&net_h->nabla_b);
@@ -163,10 +162,13 @@ void network_update_mini_batch (network_t * const net_h,
         }
     }*/
 
-    for (uint32_t i = beginIndex; i <= endIndex; i++) {
+    /*for (uint32_t i = beginIndex; i <= endIndex; i++) {
     	backpropagation_kernel<<<1,1024>>>(net_d, data_d, rand_index_d, i, endIndex);
     	copy_nabla_from_device(net_d, &net_h->nabla_w, &net_h->nabla_b);
-    }
+    }*/
+
+    backpropagation_kernel<<<net_h->mini_batch_size,1024>>>(net_d, data_d, rand_index_d, beginIndex, endIndex);
+    copy_nabla_from_device(net_d, &net_h->nabla_w, &net_h->nabla_b);
 
     free_device_network(net_d);
 

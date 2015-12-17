@@ -1,12 +1,13 @@
 #include<cstdio>
 #include<iostream>
+#include<ctime>
 
 #include "data_loader.h"
 #include "data_types.h"
 
 #define VALIDATION_DATA_CHUNK_SIZE 10000
 #define MINI_BATCH_SIZE 10
-#define EPOCHS 1
+#define EPOCHS 10
 #define ETA 3.0
 #define RANDOM_MEAN 0.0
 #define RANDOM_STDDEV 1.0
@@ -63,7 +64,11 @@ int main(int argc, char** argv) {
 	partition_data(&data, &test_data, VALIDATION_DATA_CHUNK_SIZE);
 
 	printf ("Stochastic gradient descent...\n");
+	std::clock_t begin = clock();
 	network_sgd (&network, &data, &test_data);
+	std::clock_t end = clock();
+	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+	printf("Time taken to train the network: %f seconds \n", elapsed_secs);
 
 
 	network_free (&network);
