@@ -8,23 +8,10 @@
 #include <stdint.h>
 
 #include "data_loader.h"
+#include "data_types.h"
 #include "utils.h"
 
-typedef struct
-{
-    double eta;
-    uint32_t epochs;
-    uint32_t mini_batch_size;
-    uint32_array_t nodes;
-    vector_t inputs;
-    vector_array_t outputs;
-    vector_array_t zs;
-    vector_array_t nabla_b;
-    vector_array_t output_delta;
-    vector_array_t biases;
-    matrix_array_t weights;
-    matrix_array_t nabla_w;
-} network_t;
+
 
 typedef void (*update_batch_f) (network_t * const,
                    const data_t * const,

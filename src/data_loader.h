@@ -8,37 +8,7 @@
 #ifndef DATA_LOADER_H_
 #define DATA_LOADER_H_
 
-
-#include <stdint.h>
-#include <stdio.h>
-#include <assert.h>
-
-#define IMAGES_HEADER_SIZE_BYTES 16
-#define LABELS_HEADER_SIZE_BYTES 8
-
-typedef struct
-{
-    int32_t magic_num;
-    int32_t num_images;
-    int32_t rows;
-    int32_t cols;
-    int32_t pixels;
-    double* images;
-} images_t;
-
-typedef struct
-{
-    int32_t magic_num;
-    int32_t num_labels;
-    uint8_t* labels;
-} labels_t;
-
-typedef struct
-{
-    labels_t labels;
-    images_t images;
-    uint32_t items;
-} data_t;
+#include "data_types.h"
 
 int32_t extract_header_line (const uint8_t * const buf);
 

@@ -12,6 +12,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(ParallelUtils.cmake)
 
 enable_cuda_support()
-add_executable(deepnet-seq main.cpp data_loader.cpp utils.cpp neural_network.cpp)
-cuda_add_executable(deepnet-cuda main.cpp data_loader.cpp backpropagation.cu utils.cpp neural_network.cpp)
+add_executable(deepnet main.cpp data_loader.cpp utils.cpp neural_network.cpp)
+cuda_add_executable(deepnet-cuda main.cpp data_loader.cpp utils.cu neural_network.cu backpropagation.cu)
 # set_target_properties(deepnet PROPERTIES COMPILE_FLAGS "-O4")

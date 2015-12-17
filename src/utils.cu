@@ -1,4 +1,9 @@
-
+/*
+ * utils.cu
+ *
+ *  Created on: 15-Dec-2015
+ *      Author: saketsaurabh
+ */
 #include <stdint.h>
 #include <assert.h>
 #include <limits>
@@ -7,6 +12,7 @@
 
 #include "utils.h"
 #define IS_RANDOM_INIT 0
+
 
 /*
  * Allocates an array of i pointers to matrices where the dimensions of the
@@ -27,6 +33,7 @@ bool matrix_array_allocate (matrix_array_t * const array,
     }
     return true;
 }
+
 
 /*
  * Allocates an array of i pointers to vectors where the dimension of the i'th
@@ -318,5 +325,6 @@ double uniform_random_generator (double mean, double stddev)
 
   return (mean + stddev * (double) X1);
 }
+
 
 

@@ -93,7 +93,7 @@ macro(enable_cuda_support)
     set_property(CACHE CUDA_DEVICE_VERSION PROPERTY STRINGS "10" "11" "12" "13"	"20" "21" "30" "32" "35" "37" "50" "52")
 
     # Enable fast-math for CUDA (_not_ GCC)
-    set(CUDA_FAST_MATH TRUE CACHE BOOL "Use Fast Math Operations")
+    set(CUDA_FAST_MATH FALSE CACHE BOOL "Use Fast Math Operations")
 
     # Tell nvcc to use a separate compiler for non-CUDA code.
     # This is useful if you need to use an older of GCC than comes by default

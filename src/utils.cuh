@@ -1,12 +1,12 @@
 /*
- * utils.h
+ * utils.cuh
  *
- *  Created on: 13-Dec-2015
+ *  Created on: 15-Dec-2015
  *      Author: saketsaurabh
  */
 
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef UTILS_CUH_
+#define UTILS_CUH_
 
 #include <stdint.h>
 
@@ -73,4 +73,5 @@ uint32_t vector_max_index(const vector_t *v);
 
 double uniform_random_generator (double mean, double stddev);
 
-#endif /* UTILS_H_ */
+
+#endif /* UTILS_CUH_ */

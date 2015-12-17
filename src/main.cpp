@@ -2,14 +2,24 @@
 #include<iostream>
 
 #include "data_loader.h"
-#include "neural_network.h"
+#include "data_types.h"
 
 #define VALIDATION_DATA_CHUNK_SIZE 10000
 #define MINI_BATCH_SIZE 10
-#define EPOCHS 10
+#define EPOCHS 3
 #define ETA 3.0
 #define RANDOM_MEAN 0.0
 #define RANDOM_STDDEV 1.0
+
+
+
+extern bool network_allocate (network_t * const network);
+extern void network_random_init (network_t * const network, const double mean, const double stddev);
+extern void network_sgd (network_t * const network,
+             const data_t * const data,
+             const data_t * const test_data);
+extern void network_free (network_t * const network);
+
 
 // Number of nodes in each layer of the network
 uint32_t nodes[] = { 784, 30, 10 };

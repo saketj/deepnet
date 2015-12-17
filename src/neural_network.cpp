@@ -1,9 +1,10 @@
-#include "neural_network.h"
-#include "utils.h"
-
 #include <assert.h>
 #include <algorithm>    // std::shuffle
 #include <unistd.h>
+
+#include "neural_network.h"
+#include "utils.h"
+
 
 bool network_allocate (network_t * const net)
 {
@@ -68,7 +69,7 @@ void network_sgd (network_t * const net,
     for (uint32_t i = 0; i < net->epochs; ++i)
     {
     	// Randomize the index array
-    	std::random_shuffle(rand_index, rand_index + (sizeof(rand_index) / sizeof(rand_index[0])));
+    	//std::random_shuffle(rand_index, rand_index + (sizeof(rand_index) / sizeof(rand_index[0])));
 
     	network_process_mini_batches (net, data, &rand_index[0], &network_update_mini_batch);
 
@@ -79,6 +80,20 @@ void network_sgd (network_t * const net,
                 test_data->items);
     }
 }
+
+void print_vector(vector_t *v) {
+	for(uint32_t i = 0; i < v->size; i++) {
+		printf("(%d,%f);",i,v->data[i]);
+	}
+	printf("\n");
+}
+void print_matrix(matrix_t *m) {
+	for(uint32_t i = 0; i < m->rows * m->cols; i++) {
+			printf("(%d,%f),",i,m->data[i]);
+		}
+		printf("\n");
+}
+
 
 
 void network_process_mini_batches (network_t * const net,
@@ -109,6 +124,7 @@ void network_process_mini_batches (network_t * const net,
     }
 }
 
+
 void network_update_mini_batch (network_t * const net,
                            const data_t * const data,
                            const uint32_array_t * const slice)
@@ -128,10 +144,11 @@ void network_update_mini_batch (network_t * const net,
         	net->inputs.data[j] = data->images.images[random_index * data->images.pixels + j];
         }
         network_backpropagate_error (net, data->labels.labels[random_index]);
-    }
+     }
 
     // Update weights and biases
     double scale_fac = net->eta / slice->size;
+
 
     uint32_t whole_layers = net->nodes.size - 1;
     for (uint32_t i = 0; i < whole_layers; ++i) {
@@ -214,6 +231,7 @@ void network_feed_forward (const network_t * const net, const uint8_t store_z)
 
         vector_vectorise (&net->outputs.data[i], &sigmoid);
     }
+
 }
 
 
@@ -245,6 +263,7 @@ void network_get_output_error (network_t * const net, const uint8_t label)
     // free memory
     delete cost_deriv.data;
     delete expected_output_y.data;
+
 }
 
 /*
