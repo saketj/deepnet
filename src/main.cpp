@@ -6,7 +6,7 @@
 
 #define VALIDATION_DATA_CHUNK_SIZE 10000
 #define MINI_BATCH_SIZE 10
-#define EPOCHS 3
+#define EPOCHS 1
 #define ETA 3.0
 #define RANDOM_MEAN 0.0
 #define RANDOM_STDDEV 1.0

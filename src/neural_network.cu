@@ -167,6 +167,7 @@ void network_update_mini_batch (network_t * const net_h,
     	backpropagation_kernel<<<1,1024>>>(net_d, data_d, rand_index_d, i, endIndex);
     	copy_nabla_from_device(net_d, &net_h->nabla_w, &net_h->nabla_b);
     }
+
     free_device_network(net_d);
 
 
