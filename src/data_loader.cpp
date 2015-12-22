@@ -1,11 +1,18 @@
+/**
+ * Filename: data_loader.cpp
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: Contains methods to read the dataset files, allocate and
+ *				initialize the data structures used to hold dataset.
+ */
+
+
 #include "data_loader.h"
-
-
 
 int32_t extract_header_line (const uint8_t * const buf)
 {
     // Reverse int32 byte order for Intel machines
-    // See http://yann.lecun.com/exdb/mnist/
     return (buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3]);
 }
 
@@ -18,10 +25,8 @@ bool read_all_data (data_t * const data,
     // Load the training and test data
     err = images_read_data (&data->images, images_file);
     images_print_stats (&data->images);
-    // RETURN_ON_ERR(err);
 
     err = labels_read_data (&data->labels, labels_file);
-    //RETURN_ON_ERR(err);
 
     labels_print_stats (&data->labels);
 
@@ -34,7 +39,6 @@ bool read_all_data (data_t * const data,
 bool images_read_data (images_t * const image_data, const char * images_file)
 {
     FILE *fp = fopen (images_file, "rb");
-    //RETURN_ERR_ON_NO_FILE(fp);
 
     uint8_t buf[IMAGES_HEADER_SIZE_BYTES];
     fread (&buf, 1, IMAGES_HEADER_SIZE_BYTES, fp);
@@ -49,7 +53,6 @@ bool images_read_data (images_t * const image_data, const char * images_file)
 
     bool err;
     err = images_allocate (image_data, image_data->pixels);
-    //RETURN_ON_ERR(err);
 
     images_load_pixels (image_data, image_data->pixels, fp);
 
@@ -61,12 +64,6 @@ bool images_read_data (images_t * const image_data, const char * images_file)
 bool images_allocate (images_t * const image_data, uint32_t pixels)
 {
     image_data->images = new double[image_data->num_images * pixels];
-    //RETURN_ERR_ON_BAD_ALLOC(image_data->images);
-
-    /*for (int i = 0; i < image_data->num_images; ++i) {
-        image_data->images[i] = new double[pixels];
-    }*/
-
     return true;
 }
 
@@ -92,8 +89,7 @@ void images_load_pixels (images_t * const image_data,
     }
 }
 
-void
-images_print_stats (const images_t * const img_data)
+void images_print_stats (const images_t * const img_data)
 {
     printf ("*** Images: ***\n");
     printf ("Magic Num: %d \n", img_data->magic_num);
@@ -102,11 +98,9 @@ images_print_stats (const images_t * const img_data)
     printf ("Columns  : %d \n\n", img_data->cols);
 }
 
-bool
-labels_read_data (labels_t * const label_data, const char * labels_file)
+bool labels_read_data (labels_t * const label_data, const char * labels_file)
 {
     FILE *fp = fopen (labels_file, "rb");
-    //RETURN_ERR_ON_NO_FILE(fp);
 
     uint8_t buf[LABELS_HEADER_SIZE_BYTES];
     fread (&buf, 1, LABELS_HEADER_SIZE_BYTES, fp);

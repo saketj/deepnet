@@ -1,5 +1,15 @@
+/**
+ * Filename: neural_network.cpp
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: The sequential implementation of the neural network for
+ * 				stochastic gradient descent. Contains the main steps of the
+ * 				algorithm broken down into various functions.
+ */
+
 #include <assert.h>
-#include <algorithm>    // std::shuffle
+#include <algorithm>
 #include <unistd.h>
 
 #include "neural_network.h"
@@ -8,13 +18,11 @@
 
 bool network_allocate (network_t * const net)
 {
-    //err_t err = GSL_SUCCESS;
 	bool err;
 
 	matrix_array_allocate (&net->weights, &net->nodes);
     matrix_array_allocate (&net->nabla_w, &net->nodes);
 
-    // These arrays are not required for the input layer
     uint32_array_t dimensions;
     dimensions.size = net->nodes.size - 1;
     dimensions.data = net->nodes.data + 1;
@@ -69,7 +77,7 @@ void network_sgd (network_t * const net,
     for (uint32_t i = 0; i < net->epochs; ++i)
     {
     	// Randomize the index array
-    	//std::random_shuffle(rand_index, rand_index + (sizeof(rand_index) / sizeof(rand_index[0])));
+    	std::random_shuffle(rand_index, rand_index + (sizeof(rand_index) / sizeof(rand_index[0])));
 
     	network_process_mini_batches (net, data, &rand_index[0], &network_update_mini_batch);
 

@@ -1,3 +1,11 @@
+/**
+ * Filename: neural_network.h
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: The corresponding header file for neural_netwok.cpp
+ */
+
 
 #ifndef NEURAL_NETWORK_H_
 #define NEURAL_NETWORK_H_

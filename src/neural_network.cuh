@@ -1,8 +1,9 @@
-/*
- * neural_network.cuh
- *
- *  Created on: 15-Dec-2015
- *      Author: saketsaurabh
+/**
+ * Filename: neural_network.cuh
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: The corresponding header file for neural_network.cu
  */
 
 #ifndef NEURAL_NETWORK_CUH_

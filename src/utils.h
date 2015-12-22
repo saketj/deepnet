@@ -1,8 +1,9 @@
-/*
- * utils.h
- *
- *  Created on: 13-Dec-2015
- *      Author: saketsaurabh
+/**
+ * Filename: utils.h
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: The corresponding header file to utils.cpp
  */
 
 #ifndef UTILS_H_

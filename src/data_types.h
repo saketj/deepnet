@@ -1,9 +1,12 @@
-/*
- * data_types.h
- *
- *  Created on: 15-Dec-2015
- *      Author: saketsaurabh
+/**
+ * Filename: data_types.h
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: Defines the various data structures used for representing the
+ * 				dataset and the neural network.
  */
+
 
 #ifndef DATA_TYPES_H_
 #define DATA_TYPES_H_

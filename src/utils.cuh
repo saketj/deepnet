@@ -1,10 +1,10 @@
-/*
- * utils.cuh
- *
- *  Created on: 15-Dec-2015
- *      Author: saketsaurabh
+/**
+ * Filename: utils.cuh
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: The corresponding header file to utils.cu
  */
-
 #ifndef UTILS_CUH_
 #define UTILS_CUH_
 

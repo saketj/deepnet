@@ -1,9 +1,11 @@
-/*
- * utils.cu
- *
- *  Created on: 15-Dec-2015
- *      Author: saketsaurabh
+/**
+ * Filename: utils.cu
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: Defines helper utility methods for neural_network.cu
  */
+
 #include <stdint.h>
 #include <assert.h>
 #include <limits>
@@ -11,7 +13,7 @@
 #include <cstdlib>
 
 #include "utils.h"
-#define IS_RANDOM_INIT 0
+#define IS_RANDOM_INIT 1
 
 
 /*

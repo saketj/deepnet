@@ -1,3 +1,12 @@
+/**
+ * Filename: backpropagation.cu
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: This CUDA backprogation kernel code computes and accumulates
+ * 				nabla_w & nabla_b for each image in the mini batch.
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -20,7 +29,9 @@ __device__ double device_sigmoid_prime (double z)
     return sig_z * (1.0 - sig_z);
 }
 
-
+/*
+ * A helper device function that implements the atomicAdd() for double types.
+ */
 __device__ double atomicAdd(double* address, double val)
 {
     unsigned long long int* address_as_ull =
@@ -35,7 +46,9 @@ __device__ double atomicAdd(double* address, double val)
     return __longlong_as_double(old);
 }
 
-
+/*
+ * the main backpropagation_kernel
+ */
 __global__ void backpropagation_kernel(device_network_t net,
 									const data_t data,
 									const uint32_array_t rand_index,
@@ -50,6 +63,7 @@ __global__ void backpropagation_kernel(device_network_t net,
 		return; // nothing to do for this block
 	}
 
+	// find the image_id in the dataset to operate upon for this block
 	uint32_t image_id = rand_index.data[block_id + beginIndex];
 	uint8_t label = data.labels.labels[image_id];
 
@@ -67,6 +81,7 @@ __global__ void backpropagation_kernel(device_network_t net,
 	__shared__ double sm_store1[SM_INPUT_SIZE];
 	__shared__ double sm_store2[SM_INPUT_SIZE];
 
+	// create a local wrappers over shared data structures
 	device_vector_array_t sm_outputs;
 	sm_outputs.num_vectors = net.outputs.num_vectors;
 	sm_outputs.size = net.outputs.size;
@@ -93,7 +108,7 @@ __global__ void backpropagation_kernel(device_network_t net,
 	sm_inputs.data = sm_inputs_data;
 
 
-
+	// initialize the shared data structures
 	if (thread_id < SM_ARR_SIZE) {
 		sm_outputs.size_array[thread_id] = net.outputs.size_array[thread_id];
 		sm_outputs.offset_positions[thread_id] = net.outputs.offset_positions[thread_id];
@@ -222,15 +237,10 @@ __global__ void backpropagation_kernel(device_network_t net,
 	}
 	__syncthreads();
 
-	//delete expected_output_y;
-	//delete cost_deriv;
-
-
 	// step 4: network_accumulate_cfgs (net, output_layer_index);
 	// vector_add (&net->output_delta.data[layer], &net->nabla_b.data[layer], &net->nabla_b.data[layer]);
 	if (thread_id < (net.nabla_b.size_array[output_layer_index]) ) {
 		uint32_t pos = net.nabla_b.offset_positions[output_layer_index] + thread_id;
-		//net.nabla_b.data[pos] += sm_output_delta.data[pos];
 		atomicAdd(&net.nabla_b.data[pos], sm_output_delta.data[pos]);
 	}
 	__syncthreads();
@@ -244,7 +254,6 @@ __global__ void backpropagation_kernel(device_network_t net,
 		uint32_t matrix_pos = net.nabla_w.offset_positions[output_layer_index] + thread_id ;
 		uint32_t col_vector_pos = sm_output_delta.offset_positions[output_layer_index] + i_idx;
 		uint32_t row_vector_pos = sm_outputs.offset_positions[output_layer_index - 1] + j_idx; // IMP: layer-1!
-		//net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos];
 		atomicAdd(&net.nabla_w.data[matrix_pos], sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos]);
 	}
 	__syncthreads();
@@ -270,9 +279,6 @@ __global__ void backpropagation_kernel(device_network_t net,
         // create a copy of weights.data[l+1] matrix and then transpose
         uint32_t rows = net.weights.rows_array[l+1];
         uint32_t cols = net.weights.cols_array[l+1];
-        //double* tmp_matrix = new double[rows * cols];
-        //matrix_copy(&net->weights.data[l+1], &tmp_matrix); // matrix_copy(src, dest)
-        //matrix_transpose(&tmp_matrix);
 
         if (thread_id < rows * cols) {
         	uint32_t i_idx = thread_id / cols;
@@ -307,7 +313,6 @@ __global__ void backpropagation_kernel(device_network_t net,
 		// vector_add (&net->output_delta.data[layer], &net->nabla_b.data[layer], &net->nabla_b.data[layer]);
 		if (thread_id < (net.nabla_b.size_array[l]) ) {
 			uint32_t pos = net.nabla_b.offset_positions[l] + thread_id;
-			//net.nabla_b.data[pos] += sm_output_delta.data[pos];
 			atomicAdd(&net.nabla_b.data[pos], sm_output_delta.data[pos]);
 		}
 		__syncthreads();
@@ -321,7 +326,6 @@ __global__ void backpropagation_kernel(device_network_t net,
 				uint32_t matrix_pos = net.nabla_w.offset_positions[l] + thread_id ;
 				uint32_t col_vector_pos = sm_output_delta.offset_positions[l] + i_idx;
 				uint32_t row_vector_pos = sm_outputs.offset_positions[l - 1] + j_idx; // IMP: layer-1!
-				//net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos];
 				atomicAdd(&net.nabla_w.data[matrix_pos], sm_output_delta.data[col_vector_pos] * sm_outputs.data[row_vector_pos]);
 			}
 		} else {
@@ -340,7 +344,6 @@ __global__ void backpropagation_kernel(device_network_t net,
 					uint32_t j_idx = e_idx % cols;
 					uint32_t matrix_pos = net.nabla_w.offset_positions[l] + e_idx ;
 					uint32_t col_vector_pos = sm_output_delta.offset_positions[l] + i_idx;
-					//net.nabla_w.data[matrix_pos] += sm_output_delta.data[col_vector_pos] * sm_inputs.data[j_idx];
 					atomicAdd(&net.nabla_w.data[matrix_pos], sm_output_delta.data[col_vector_pos] * sm_inputs.data[j_idx]);
 				}
 				num_iter--;
@@ -348,10 +351,6 @@ __global__ void backpropagation_kernel(device_network_t net,
 
 		}
 		__syncthreads();
-
-
-        //delete tmp_vector;
-        //delete tmp_matrix;
     }
 
 }

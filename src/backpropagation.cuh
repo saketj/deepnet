@@ -1,9 +1,11 @@
-/*
- * backpropagation.cuh
- *
- *  Created on: 15-Dec-2015
- *      Author: saketsaurabh
+/**
+ * Filename: backpropagation.cuh
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: The header file corresponding to the backpropagation.cu
  */
+
 
 #ifndef BACKPROPAGATION_CUH_
 #define BACKPROPAGATION_CUH_

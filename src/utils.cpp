@@ -1,3 +1,11 @@
+/**
+ * Filename: utils.cpp
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: Defines helper utility methods for neural_network.cpp.
+ */
+
 
 #include <stdint.h>
 #include <assert.h>
@@ -6,7 +14,7 @@
 #include <cstdlib>
 
 #include "utils.h"
-#define IS_RANDOM_INIT 0
+#define IS_RANDOM_INIT 1
 
 /*
  * Allocates an array of i pointers to matrices where the dimensions of the

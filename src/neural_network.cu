@@ -1,8 +1,11 @@
-/*
- * neural_network.cu
- *
- *  Created on: 15-Dec-2015
- *      Author: saketsaurabh
+/**
+ * Filename: neural_network.cu
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: The parallel implementation of the neural network for
+ * 				stochastic gradient descent. Contains the main steps of the
+ * 				algorithm broken down into various functions.
  */
 
 #include <assert.h>
@@ -14,16 +17,16 @@
 #include "utils.cuh"
 #include "backpropagation.cuh"
 
+#define THREADS_PER_BLOCK 1024
+
 
 bool network_allocate (network_t * const net)
 {
-    //err_t err = GSL_SUCCESS;
 	bool err = true;
 
 	matrix_array_allocate (&net->weights, &net->nodes);
     matrix_array_allocate (&net->nabla_w, &net->nodes);
 
-    // These arrays are not required for the input layer
     uint32_array_t dimensions;
     dimensions.size = net->nodes.size - 1;
     dimensions.data = net->nodes.data + 1;
@@ -88,7 +91,7 @@ void network_sgd (network_t * const net,
     for (uint32_t i = 0; i < net->epochs; ++i)
     {
     	// Randomize the index array
-    	//std::random_shuffle(rand_index_h->data,rand_index_h->data + (sizeof(rand_index_h->data) / sizeof(rand_index_h->data[0])));
+    	std::random_shuffle(rand_index_h->data,rand_index_h->data + (sizeof(rand_index_h->data) / sizeof(rand_index_h->data[0])));
 
     	copy_to_device_array(rand_index_d, rand_index_h);
 
@@ -151,23 +154,8 @@ void network_update_mini_batch (network_t * const net_h,
 
     device_network_t net_d = copy_to_device_network(net_h);
 
+    backpropagation_kernel<<<net_h->mini_batch_size,THREADS_PER_BLOCK>>>(net_d, data_d, rand_index_d, beginIndex, endIndex);
 
-    /*// call backpropagation kernel here
-    // execution configuration: <endIndex - beginIndex + 1, 1024>
-    for (uint32_t i = beginIndex; i <= endIndex; ++i) {
-    	backpropagation_kernel<<<1,1024>>>(net_d, data_d, rand_index_d, i, endIndex);
-    	cudaError_t cudaerr = cudaDeviceSynchronize();
-        if (cudaerr != CUDA_SUCCESS) {
-        	printf("kernel launch failed with error \"%s\".\n",cudaGetErrorString(cudaerr));
-        }
-    }*/
-
-    /*for (uint32_t i = beginIndex; i <= endIndex; i++) {
-    	backpropagation_kernel<<<1,1024>>>(net_d, data_d, rand_index_d, i, endIndex);
-    	copy_nabla_from_device(net_d, &net_h->nabla_w, &net_h->nabla_b);
-    }*/
-
-    backpropagation_kernel<<<net_h->mini_batch_size,1024>>>(net_d, data_d, rand_index_d, beginIndex, endIndex);
     copy_nabla_from_device(net_d, &net_h->nabla_w, &net_h->nabla_b);
 
     free_device_network(net_d);

@@ -1,9 +1,11 @@
-/*
- * data_loader.h
- *
- *  Created on: 13-Dec-2015
- *      Author: saketsaurabh
+/**
+ * Filename: data_loader.h
+ * Authors: Saket Saurabh, Shashank Gupta
+ * Language: C++
+ * To Compile: Please check README.txt
+ * Description: Corresponding header file for data_loader.cpp
  */
+
 
 #ifndef DATA_LOADER_H_
 #define DATA_LOADER_H_
